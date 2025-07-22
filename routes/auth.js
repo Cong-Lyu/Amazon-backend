@@ -1,4 +1,5 @@
 const express = require('express')
+const pool = require('../util/db.js')
 const router = express.Router()
 
 router.get('/isvalidusertoken/:userToken', async (req, res) => {

@@ -1,27 +1,35 @@
 const express = require('express');
-const mysql2 = require('mysql2');
-const dotenv = require('dotenv');
-dotenv.config();
+const pool = require('./util/db.js');
+const crypto = require('crypto');
+const cors = require('cors')
+const usersRouter = require('./routes/users.js')
+const tokenRouter = require('./routes/auth.js')
 
-const pool = mysql2.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-}).promise()
 
-const amazonServer = express();
 
-amazonServer.use(express.static('./public'));
-amazonServer.use(express.json());
 
-amazonServer.post('/login', async (req, res) => {
-  const queryBody = 'INSERT INTO users (userPassword, userEmail, lastLogin) VALUES(?, ?, NOW())';
-  const result = await pool.query(queryBody, [req.body.userPassword, req.body.userEmail])
-  res.status(200).send(result);
+const userLoginUrl = 'https://supplekick-us.backendless.app/api/users/login';
+const userTokenVarifyUrl = 'https://supplekick-us.backendless.app/api/users/isvalidusertoken';
+
+const productsTableUrl = 'https://localhost:5000/api/products';
+//let cartUrl = 'https://api.backendless.com/059E0E6C-3A70-434F-B0EE-230A6650EEAE/3AB37559-1318-4AAE-8B26-856956A63050/data/cart';
+
+const amazonBackEndServer = express();
+amazonBackEndServer.use(express.urlencoded({ extended: false }));
+amazonBackEndServer.use(express.json());
+amazonBackEndServer.use(cors());
+
+amazonBackEndServer.use('/api/users', usersRouter)
+amazonBackEndServer.use('/api/token', tokenRouter)
+
+amazonBackEndServer.get('/api/products', async (req, res) => {
+  const productsQuery = 'SELECT * FROM products'
+  const productsQueryResult = await pool.query(productsQuery, [])
+  if(productsQueryResult[0].length !== 0) {
+    res.json(productsQueryResult[0])
+  }
 })
 
-
-amazonServer.listen(5000, () => {
+amazonBackEndServer.listen(5000, () => {
   console.log('Now Amazon server is created and listening requests from port 5000......');
 })
