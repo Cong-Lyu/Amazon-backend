@@ -4,29 +4,60 @@ const crypto = require('crypto');
 const cors = require('cors')
 const usersRouter = require('./routes/users.js')
 const tokenRouter = require('./routes/auth.js')
-
-
-
+const tokenAuth = require('./util/tokenAuth.js')
 
 const userLoginUrl = 'https://supplekick-us.backendless.app/api/users/login';
 const userTokenVarifyUrl = 'https://supplekick-us.backendless.app/api/users/isvalidusertoken';
-
 const productsTableUrl = 'https://localhost:5000/api/products';
-//let cartUrl = 'https://api.backendless.com/059E0E6C-3A70-434F-B0EE-230A6650EEAE/3AB37559-1318-4AAE-8B26-856956A63050/data/cart';
+
+let cartUrl = 'https://api.backendless.com/api/cart';
 
 const amazonBackEndServer = express();
 amazonBackEndServer.use(express.urlencoded({ extended: false }));
 amazonBackEndServer.use(express.json());
 amazonBackEndServer.use(cors());
 
-amazonBackEndServer.use('/api/users', usersRouter)
+amazonBackEndServer.use('/api', usersRouter)
 amazonBackEndServer.use('/api/token', tokenRouter)
 
-amazonBackEndServer.get('/api/products', async (req, res) => {
-  const productsQuery = 'SELECT * FROM products'
-  const productsQueryResult = await pool.query(productsQuery, [])
-  if(productsQueryResult[0].length !== 0) {
-    res.json(productsQueryResult[0])
+
+
+amazonBackEndServer.get('/api/cart', async (req, res) => {
+  if(tokenAuth(req.headers['userToken'])) {
+    const allowedFields = ['userObjectId', 'productObjectId']; // only fields in this are allowed.
+    let retrievalQuery = 'SELECT * FROM cart WHERE 1=1'
+    const keyPairs = req.query
+    const keys = Object.keys(keyPairs)
+    const values = []
+    for (const key of keys) {
+      if(allowedFields.includes(key)) {
+        retrievalQuery += ` AND ${key} = ?`
+        values.push(Number(keyPairs[key]))
+      }
+      else {
+        return res.status(404).send('Wrong field name!')
+      }
+    }
+    const retrievalResult = await pool.query(retrievalQuery, values)
+    return res.status(200).json(retrievalResult[0])
+  }
+  else {
+    return res.status(404).send('You have not logged in yet!')
+  }
+})
+
+amazonBackEndServer.put('/api/cart/:id', async (req, res) => {
+  if(!req.headers['user-token']) {
+    res.status(404).send('user token is not provided!')
+  }
+  //-----we assume that the validation of the token is executed at the front end site------//
+  else {
+    const num = req.params['id']
+    const productObjectId = req.body['productObjectId']
+    const productQuantity = req.body['productQuantity']
+    const productInsertQuery = 'UPDATE cart SET productQuantity = ? WHERE productObjectId = ?'
+    const insertResult = await pool.query(productInsertQuery, [productQuantity, productObjectId])
+    res.status(200).send(insertResult)
   }
 })
 
