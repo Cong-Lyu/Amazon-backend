@@ -6,12 +6,6 @@ const usersRouter = require('./routes/users.js')
 const tokenRouter = require('./routes/auth.js')
 const tokenAuth = require('./util/tokenAuth.js')
 
-const userLoginUrl = 'https://supplekick-us.backendless.app/api/users/login';
-const userTokenVarifyUrl = 'https://supplekick-us.backendless.app/api/users/isvalidusertoken';
-const productsTableUrl = 'https://localhost:5000/api/products';
-
-let cartUrl = 'https://api.backendless.com/api/cart';
-
 const amazonBackEndServer = express();
 amazonBackEndServer.use(express.urlencoded({ extended: false }));
 amazonBackEndServer.use(express.json());

@@ -1,6 +1,7 @@
 const express = require('express')
 const pool = require('../util/db.js')
 const crypto = require('crypto');
+const tokenAuth = require('../util/tokenAuth.js')
 const router = express.Router()
 
 router.post('/users/login', async (req, res) => {
@@ -85,6 +86,19 @@ router.put('/cart/:id', async (req, res) => {
     const productInsertQuery = 'UPDATE cart SET productQuantity = ? WHERE productObjectId = ?'
     const insertResult = await pool.query(productInsertQuery, [productQuantity, productObjectId])
     res.status(200).send(insertResult)
+  }
+})
+
+router.delete('/cart/:id', async (req, res) => {
+  if(!req.headers['user-token']) {
+    res.status(404).send('user token is not provided!')
+  }
+  //-----we assume that the validation of the token is executed at the front end site------//
+  else {
+    const objectId = Number(req.params['id'])
+    const productDeleteQuery = 'DELETE FROM cart WHERE objectId = ?'
+    const deleteResult = await pool.query(productDeleteQuery, [objectId])
+    res.status(200).send(deleteResult)
   }
 })
 
